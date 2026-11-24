@@ -1,0 +1,17 @@
+{
+  "name": "Hitung Tangga",
+  "short_name": "Hitung Tangga",
+  "description": "Kalkulator tangga beton & besi: ukuran anak tangga, gambar, feng shui dan estimasi material.",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbfaf7",
+  "theme_color": "#d9480f",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

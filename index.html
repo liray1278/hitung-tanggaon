@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#d9480f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Hitung Tangga">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<title>Hitung Tangga</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: gambar kerja lapangan — tegas, jelas, siap dipakai tukang
+   IDEA: lembar gambar potongan tangga dengan garis ukur merah-oranye
+   PICTURE: potongan samping tangga skala otomatis, beton berarsir / besi profil
+   COLOUR and TYPE: kertas putih, tinta hitam, oranye K3 untuk ukuran, abu beton; Barlow Condensed + Barlow
+   LAYOUT: gambar + hasil besar di atas, input di samping (lebar) / bawah (HP), lalu tabel */
+:root{color-scheme:light dark;
+--bg:light-dark(#fbfaf7,#131518);--paper:light-dark(#ffffff,#1b1e22);--ink:light-dark(#16191d,#eceae5);
+--mut:light-dark(#5d636b,#a3a8ae);--line:light-dark(#d9d6cf,#33373d);--acc:light-dark(#d9480f,#ff7a3d);
+--conc:light-dark(#cfcbc2,#4a4d52);--steel:light-dark(#3d5a73,#7fa6c6);--ok:light-dark(#2b7a3d,#6cc983);--warn:light-dark(#b35c00,#ffb347);--bad:light-dark(#c0262d,#ff6b6b)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Barlow,system-ui,sans-serif;overflow-x:clip}
+h1,h2,.big{font-family:"Barlow Condensed",Barlow,system-ui,sans-serif;letter-spacing:.01em}
+header{padding:18px max(4vw,16px) 6px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+h1{margin:0;font-size:clamp(30px,5vw,44px);line-height:1.05}
+header p{margin:0;color:var(--mut)}
+.wrap{max-width:1240px;margin:0 auto;padding:10px max(4vw,16px) 40px;display:grid;gap:18px;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"draw form" "out form"}
+.drawing{grid-area:draw}.form{grid-area:form}.out{grid-area:out}
+@media(max-width:900px){.wrap{grid-template-columns:minmax(0,1fr);grid-template-areas:"draw" "form" "out"}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px}
+.fig{position:relative;height:360px}
+.cap{font-size:13px;font-weight:600;color:var(--mut);margin:0 0 4px}.cap+.fig{margin-bottom:10px}
+.big.sm{font-size:clamp(24px,3.4vw,32px)}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.res{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+@media(max-width:520px){.res{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.res div{border-top:3px solid var(--ink);padding-top:6px}
+.res .k{font-size:13px;color:var(--mut)}.big{font-size:clamp(28px,4vw,40px);font-weight:700;line-height:1;white-space:nowrap}
+.big small{font-size:16px;font-weight:600;color:var(--mut)}
+.msgs{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:6px}
+.msgs li{padding-left:22px;position:relative;font-size:15px}
+.msgs li::before{content:"";position:absolute;left:4px;top:7px;width:10px;height:10px;border-radius:50%;background:var(--c)}
+label{display:block;font-weight:600;font-size:14px;margin:12px 0 4px}
+label span{font-weight:400;color:var(--mut)}
+input,select{width:100%;font:16px Barlow,system-ui,sans-serif;padding:10px 12px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.lk{display:flex;gap:6px}.lk input{flex:1}
+.lkb{flex:none;width:44px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--mut);cursor:pointer;display:grid;place-items:center}
+.lkb[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+input[readonly]{background:transparent;border-style:dashed;color:var(--mut)}
+input:focus-visible,select:focus-visible,button:focus-visible,tr[tabindex]:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;min-height:44px;font:600 16px Barlow,system-ui,sans-serif;background:var(--bg);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chk{display:flex;align-items:center;gap:10px;margin-top:14px;font-weight:600;min-height:44px}
+.chk input{width:22px;height:22px;min-height:0}
+.btn{margin-top:14px;width:100%;min-height:44px;border:0;border-radius:8px;background:var(--acc);color:#fff;font:600 16px Barlow,system-ui,sans-serif;cursor:pointer}
+.btn.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+h2{font-size:24px;margin:0 0 8px;line-height:1.1}
+.out{display:grid;gap:18px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal}
+@media(max-width:520px){table{font-size:14px}th,td{padding:8px 4px}}
+th{font-size:13px;color:var(--mut);font-weight:600}
+tr.sel td{background:color-mix(in srgb,var(--acc) 14%,transparent);font-weight:600}
+tbody tr[tabindex]{cursor:pointer}
+.note{font-size:13px;color:var(--mut);margin:8px 0 0}
+.scroll{overflow-x:auto}.tall{max-height:360px;overflow-y:auto}
+.hide{display:none}
+details.grp{margin-top:14px;border:1px solid var(--line);border-radius:8px;padding:0 12px}
+details.grp summary{min-height:44px;display:flex;align-items:center;font-weight:600;cursor:pointer}
+details.grp[open]{padding-bottom:12px}
+.lock{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;padding:24px;overflow:auto}
+.lock.off{display:none}
+.lockbox{width:min(380px,100%);background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:24px}
+.lockbox h1{margin-bottom:6px}.lockbox p{margin:6px 0;color:var(--mut)}
+#code{font-size:20px;letter-spacing:.08em;text-transform:uppercase;text-align:center}
+.codes td{font-size:14px}.codes code{font-size:15px;font-weight:600}
+.codes button{min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:600 14px Barlow,system-ui,sans-serif;cursor:pointer}
+h3{font-size:18px;margin:16px 0 6px}
+#pdfMsg a,#pdfMsg button{color:var(--acc);font:inherit;font-weight:600;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+@media print{header p,.form{display:none!important}.wrap{display:block;padding:0}.card{border:0;break-inside:avoid;padding:6px 0}.tall{max-height:none;overflow:visible}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="lock" id="lock" role="dialog" aria-modal="true" aria-labelledby="lockT">
+  <form class="lockbox" id="lockF" onsubmit="return false">
+    <h1 id="lockT">Hitung Tangga</h1>
+    <p>Masukkan kode aktivasi untuk membuka aplikasi.</p>
+    <label for="code">Kode aktivasi</label>
+    <input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXXX">
+    <button type="submit" class="btn" id="unlock">Buka aplikasi</button>
+    <p class="note" id="lockMsg" aria-live="polite"></p>
+    <p class="note">Belum punya kode? Hubungi pemilik aplikasi.</p>
+  </form>
+</div>
+<header><h1>Hitung Tangga</h1><p>Tangga lurus, L atau U — dari ukuran tangga ke ukuran anak tangga, atau sebaliknya, lengkap dengan gambarnya.</p></header>
+
+<main class="wrap">
+<section class="card drawing">
+  <p class="cap" id="capS">Potongan samping</p>
+  <div class="fig" id="fig"><svg id="svg" role="img" aria-label="Gambar potongan tangga"></svg></div>
+  <p class="cap">Denah (tampak atas)</p>
+  <div class="fig" id="pfig"><svg id="plan" role="img" aria-label="Denah tangga"></svg></div>
+  <div class="res">
+    <div><div class="k" id="k1">Optrede (tinggi)</div><div class="big" id="rR">–</div></div>
+    <div><div class="k" id="k2">Antrede (injakan)</div><div class="big" id="rT">–</div></div>
+    <div><div class="k">Jumlah optrede</div><div class="big" id="rN">–</div></div>
+    <div><div class="k">Kemiringan</div><div class="big" id="rA">–</div></div>
+  </div>
+  <ul class="msgs" id="msgs"></ul>
+</section>
+
+<form class="card form" id="f" onsubmit="return false">
+  <label>Jenis tangga</label>
+  <div class="seg" id="seg"><button type="button" data-t="beton" aria-pressed="true">Beton</button><button type="button" data-t="besi" aria-pressed="false">Besi</button></div>
+  <label>Bentuk tangga</label>
+  <div class="seg" id="sseg"><button type="button" data-s="I" aria-pressed="true">Lurus</button><button type="button" data-s="L" aria-pressed="false">Bentuk L</button><button type="button" data-s="U" aria-pressed="false">Bentuk U</button><button type="button" data-s="S" aria-pressed="false">Putar</button></div>
+  <div id="spBox" class="hide">
+    <div class="row2">
+      <div><label for="D">Diameter tangga <span>cm</span></label><input id="D" type="number" inputmode="decimal" value="160" min="100"></div>
+      <div><label for="pole">Tiang tengah</label><select id="pole"><option value="0">Pipa 4″ (Ø11,4)</option><option value="1">Pipa 5″ (Ø14)</option><option value="2" selected>Pipa 6″ (Ø16,8)</option></select></div>
+    </div>
+    <div class="row2">
+      <div id="rotBox"><label for="rot">Putaran total <span>°</span></label><input id="rot" type="number" inputmode="decimal" placeholder="Otomatis" min="90"></div>
+      <div><label for="dir">Arah naik</label><select id="dir"><option value="cw">Searah jarum jam</option><option value="ccw">Berlawanan jarum jam</option></select></div>
+    </div>
+  </div>
+  <label>Hitung dari</label>
+  <div class="seg" id="mseg"><button type="button" data-m="HL" aria-pressed="true">Ukuran tangga</button><button type="button" data-m="RT" aria-pressed="false">Ukuran anak tangga</button></div>
+  <div id="rtBox" class="hide">
+    <div class="row2">
+      <div><label for="R">Optrede (tinggi) <span>cm</span></label><input id="R" type="number" inputmode="decimal" value="17.5" min="5"></div>
+      <div><label for="T">Antrede (injakan) <span>cm</span></label><input id="T" type="number" inputmode="decimal" value="28" min="10"></div>
+    </div>
+    <p class="note" id="rtHint"></p>
+    <label for="n2">Jumlah optrede <span>termasuk naik ke lantai atas</span></label><input id="n2" type="number" inputmode="numeric" value="17" min="2">
+  </div>
+  <div id="hlBox">
+    <div class="row2">
+      <div><label for="H">Tinggi total <span>cm</span></label><input id="H" type="number" inputmode="decimal" value="300" min="20"></div>
+      <div><label for="L" id="lL">Panjang datar <span>cm</span></label><input id="L" type="number" inputmode="decimal" value="420" min="20"></div>
+    </div>
+    <div id="L2box" class="hide"><label for="L2">Panjang sisi 2 <span>cm, termasuk bordes sudut</span></label><input id="L2" type="number" inputmode="decimal" value="300" min="20"></div>
+    <p class="note" id="lHint"></p>
+    <div class="row2">
+      <div><label for="kR">Optrede <span>cm</span></label><div class="lk"><input id="kR" type="number" inputmode="decimal" value="17.5" min="5"><button type="button" class="lkb" data-k="R" aria-pressed="false" aria-label="Kunci optrede"></button></div></div>
+      <div><label for="kT" id="lkT">Antrede <span>cm</span></label><div class="lk"><input id="kT" type="number" inputmode="decimal" value="28" min="10"><button type="button" class="lkb" data-k="T" aria-pressed="false" aria-label="Kunci antrede"></button></div></div>
+    </div>
+    <p class="note" id="lkHint"></p>
+  </div>
+  <div class="row2">
+    <div id="wBox"><label for="W">Lebar tangga <span>cm</span></label><input id="W" type="number" inputmode="decimal" value="100" min="40"></div>
+    <div id="nBox"><label for="N">Jumlah optrede <span>kosong = otomatis</span></label><input id="N" type="number" inputmode="numeric" placeholder="Otomatis" min="2"></div>
+  </div>
+  <div id="gapBox" class="hide"><label for="gap">Celah antar lengan <span>cm, 0 bila dinding</span></label><input id="gap" type="number" inputmode="decimal" value="10" min="0"></div>
+  <div id="bonBox"><label class="chk"><input id="Bon" type="checkbox"> Pakai bordes (tempat istirahat) di tengah</label>
+  <div id="Bbox" class="hide"><label for="B">Panjang bordes <span>cm</span></label><input id="B" type="number" inputmode="decimal" value="100" min="60"></div></div>
+  <label for="fs">Hitungan feng shui <span>siklus 5</span></label>
+  <select id="fs"><option value="off">Tidak dipakai</option><option value="12">Sisa 1 atau 2 (Lahir / Tua)</option><option value="1">Sisa 1 saja (Lahir)</option></select>
+  <div id="fsBox" class="hide"><label for="fsb">Yang dihitung</label>
+  <select id="fsb"><option value="opt">Jumlah optrede (sampai lantai atas)</option><option value="inj">Jumlah injakan (tanpa lantai atas)</option></select></div>
+  <div id="betonBox"><label for="t">Tebal pelat tangga <span>cm</span></label><input id="t" type="number" inputmode="decimal" value="12" min="8"></div>
+  <div id="besiBox" class="hide">
+    <label for="prof">Profil ibu tangga (stringer)</label>
+    <select id="prof"><option value="0">UNP 100</option><option value="1">UNP 125</option><option value="2" selected>UNP 150</option><option value="3">WF 150×75</option><option value="4">Hollow 50×100×2,3</option></select>
+    <label for="plat">Plat injakan</label>
+    <select id="plat"><option value="0">Plat bordes 2 mm</option><option value="1" selected>Plat bordes 3 mm</option><option value="2">Plat bordes 4,5 mm</option></select>
+  </div>
+  <details class="grp"><summary>Railing / pegangan</summary>
+    <label for="rail">Railing</label>
+    <select id="rail"><option value="0">Tidak dihitung</option><option value="1">1 sisi (sisi bebas)</option><option value="2">2 sisi</option></select>
+    <div id="railBox" class="hide">
+      <label for="railT">Model</label>
+      <select id="railT"><option value="0">Hollow 40×40 + jeruji hollow 20×20</option><option value="1">Pipa stainless Ø2″ + jeruji Ø¾″</option><option value="2">Kaca tempered 10 mm + pegangan stainless</option></select>
+      <div class="row2">
+        <div><label for="railH">Tinggi <span>cm</span></label><input id="railH" type="number" inputmode="decimal" value="90" min="60"></div>
+        <div><label for="railS">Jarak jeruji <span>cm</span></label><input id="railS" type="number" inputmode="decimal" value="12" min="5"></div>
+      </div>
+    </div>
+  </details>
+  <details class="grp" id="rbGrp"><summary>Pembesian (tangga beton)</summary>
+    <div class="row2">
+      <div><label for="dm">Tulangan utama</label><select id="dm"><option value="10">D10</option><option value="12" selected>D12</option><option value="13">D13</option><option value="16">D16</option></select></div>
+      <div><label for="sm">Jarak <span>cm</span></label><input id="sm" type="number" inputmode="decimal" value="15" min="5"></div>
+    </div>
+    <div class="row2">
+      <div><label for="db">Tulangan bagi</label><select id="db"><option value="8" selected>Ø8</option><option value="10">Ø10</option></select></div>
+      <div><label for="sb">Jarak <span>cm</span></label><input id="sb" type="number" inputmode="decimal" value="20" min="5"></div>
+    </div>
+    <label class="chk"><input id="dbl" type="checkbox" checked> Tulangan 2 lapis (atas &amp; bawah)</label>
+  </details>
+  <button type="button" class="btn" id="pdf">Simpan PDF</button>
+  <p class="note" id="pdfMsg" aria-live="polite"></p>
+  <div class="row2"><button type="button" class="btn alt" id="copy">Salin ringkasan</button><button type="button" class="btn alt" id="print">Cetak</button></div>
+  <button type="button" class="btn alt" id="reset">Kembalikan contoh</button>
+  <div id="ownerBox" class="hide">
+    <details class="grp"><summary>Kelola kode aktivasi (pemilik)</summary>
+      <p class="note">Setiap kode bisa dipakai membuka aplikasi di HP mana pun. Catat untuk siapa kode diberikan.</p>
+      <label for="cName">Nama penerima <span>opsional</span></label><input id="cName" placeholder="mis. Pak Budi">
+      <button type="button" class="btn" id="cGen">Buat kode baru</button>
+      <div class="scroll"><table class="codes"><tbody id="cList"></tbody></table></div>
+      <button type="button" class="btn alt" id="lockNow">Kunci aplikasi lagi</button>
+    </details>
+  </div>
+  <p class="note">Patokan: optrede 15–19 cm, antrede 25–32 cm, rumus 2×optrede + antrede ≈ 60–65 cm. Tangga L dan U memakai bordes di belokan seluas lebar tangga.</p>
+</form>
+
+<div class="out">
+  <section class="card"><h2>Pilihan jumlah anak tangga</h2>
+    <div class="scroll"><table><thead id="optH"></thead><tbody id="opt"></tbody></table></div>
+    <p class="note">★ = paling nyaman. Ketuk baris untuk memakai pilihan itu. Baris tersorot = yang dipakai.</p></section>
+  <section class="card"><h2>Tabel marking di lapangan</h2>
+    <div class="scroll tall"><table><thead><tr><th>Titik</th><th>Tinggi</th><th id="mk3">Jarak datar</th></tr></thead><tbody id="mark"></tbody></table></div>
+    <p class="note" id="markNote"></p></section>
+  <section class="card hide" id="rbCard"><h2>Pembesian tangga beton</h2>
+    <div class="scroll"><table><thead><tr><th>Elemen</th><th>Besi</th><th>Jumlah</th><th>Panjang potong</th><th>Total</th></tr></thead><tbody id="rb"></tbody></table></div>
+    <h3>Rekap per diameter</h3>
+    <div class="scroll"><table><thead><tr><th>Diameter</th><th>Panjang +5%</th><th>Batang 12 m</th><th>Berat</th></tr></thead><tbody id="rbSum"></tbody></table></div>
+    <p class="note" id="rbNote"></p></section>
+  <section class="card hide" id="railCard"><h2>Railing / pegangan</h2>
+    <div class="scroll"><table><tbody id="railRows"></tbody></table></div>
+    <p class="note" id="railNote"></p></section>
+  <section class="card"><h2 id="matH">Estimasi material</h2>
+    <div class="scroll"><table><tbody id="mat"></tbody></table></div>
+    <p class="note" id="matNote"></p></section>
+</div>
+</main>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const PROF=[["UNP 100",9.36,10],["UNP 125",13.4,12.5],["UNP 150",18.6,15],["WF 150×75",14.0,15],["Hollow 50×100×2,3",5.4,10]];
+const PLAT=[["Plat bordes 2 mm",17],["Plat bordes 3 mm",25],["Plat bordes 4,5 mm",37]];
+const SHN={I:"lurus",L:"bentuk L",U:"bentuk U",S:"putar"};
+const POLE=[["Pipa 4″",11.43,12.18],["Pipa 5″",13.98,15.01],["Pipa 6″",16.83,18.18]]; // nama, OD cm, kg/m (tebal 4,5 mm)
+const RAIL=[["Hollow 40×40 + jeruji hollow 20×20",2.0,0.75],["Pipa stainless Ø2″ + jeruji Ø¾″",1.5,0.55],["Kaca tempered 10 mm + pegangan stainless",1.5,0]];
+const kgm=d=>0.006165*d*d;
+const DEF={lkR:false,lkT:false,kR:17.5,kT:28,D:160,pole:2,rot:"",dir:"cw",rail:"0",railT:0,railH:90,railS:12,dm:12,sm:15,db:8,sb:20,dbl:true,shape:"I",mode:"HL",R:17.5,T:28,n2:17,fs:"off",fsb:"opt",type:"beton",H:300,L:420,L2:300,gap:10,W:100,N:"",Bon:false,B:100,t:12,prof:2,plat:1};
+const NUMS=["kR","kT","H","L","L2","gap","W","B","t","R","T","D","railH","railS","sm","sb"];
+let st={...DEF};
+try{Object.assign(st,JSON.parse(localStorage.getItem("hitungTangga")||"{}"))}catch(e){}
+const f1=(v,d=1)=>(+v).toLocaleString("id-ID",{maximumFractionDigits:d,minimumFractionDigits:0});
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let calc=null;
+
+const isS=()=>st.shape==="S";
+const land=()=>st.shape==="L"||st.shape==="U"||(st.shape==="I"&&st.Bon);
+const LB=()=>!land()?0:st.shape==="I"?st.B:st.W;           // panjang bordes pada potongan
+const landA=()=>!land()?0:st.shape==="I"?st.B*st.W:st.shape==="L"?st.W*st.W:st.W*(2*st.W+st.gap);
+const landP=()=>!land()?0:st.shape==="I"?2*(st.B+st.W):st.shape==="L"?4*st.W:2*(st.W+2*st.W+st.gap);
+const sp=()=>{const ro=st.D/2,rc=POLE[st.pole][1]/2,rw=Math.min(rc+30,rc+(ro-rc)*.6);return{ro,rc,rw,w:ro-rc}};
+
+function fill(){
+  for(const k of[...NUMS,"N","prof","plat","fs","fsb","n2","pole","rot","dir","rail","railT","dm","db"])$(k).value=st[k];
+  $("dbl").checked=!!st.dbl;
+  const LKI=on=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="4.5" y="11" width="15" height="10" rx="2"/><path d="${on?"M8 11V7.5a4 4 0 0 1 8 0V11":"M8 11V7.5a4 4 0 0 1 7.6-1.7"}"/></svg>`;
+  for(const b of document.querySelectorAll(".lkb")){const on=!!st["lk"+b.dataset.k];b.setAttribute("aria-pressed",on);b.innerHTML=LKI(on);b.setAttribute("aria-label",(on?"Buka kunci ":"Kunci ")+(b.dataset.k==="R"?"optrede":"antrede"))}
+  $("kR").readOnly=!st.lkR;$("kT").readOnly=!st.lkT;$("L").readOnly=$("L2").readOnly=!!st.lkT;
+  for(const b of $("mseg").children)b.setAttribute("aria-pressed",b.dataset.m===st.mode);
+  for(const b of $("sseg").children)b.setAttribute("aria-pressed",b.dataset.s===st.shape);
+  for(const b of $("seg").children)b.setAttribute("aria-pressed",b.dataset.t===st.type);
+  const rt=st.mode==="RT",sh=st.shape;
+  $("rtBox").classList.toggle("hide",!rt);$("hlBox").classList.toggle("hide",rt);$("nBox").classList.toggle("hide",rt||!!st.lkR);
+  $("spBox").classList.toggle("hide",sh!=="S");$("rotBox").classList.toggle("hide",rt||!!st.lkT);$("wBox").classList.toggle("hide",sh==="S");
+  $("railBox").classList.toggle("hide",st.rail==="0");$("rbGrp").classList.toggle("hide",st.type!=="beton"||sh==="S");
+  $("rtHint").textContent=sh==="S"?"Untuk tangga putar, antrede diukur di garis jalan (±30 cm dari tiang).":"";
+  $("L").parentElement.classList.toggle("hide",sh==="S");
+  $("L2box").classList.toggle("hide",sh!=="L");$("gapBox").classList.toggle("hide",sh!=="U");$("bonBox").classList.toggle("hide",sh!=="I");
+  $("lL").innerHTML=(sh==="I"?"Panjang datar":sh==="L"?"Panjang sisi 1":"Panjang ruang tangga")+" <span>cm</span>";
+  $("lHint").textContent=sh==="L"?"Sisi 1 = arah naik pertama, sisi 2 = arah setelah belok. Keduanya diukur sampai tepi luar bordes sudut.":sh==="U"?"Panjang ruang = dari muka optrede pertama sampai tepi luar bordes. Lebar ruang dihitung otomatis: 2 × lebar tangga + celah.":"";
+  $("fsBox").classList.toggle("hide",st.fs==="off");
+  $("lkT").innerHTML=(sh==="S"?"Antrede (garis jalan)":"Antrede")+" <span>cm</span>";
+  $("lkHint").textContent=st.lkR||st.lkT?(st.lkT?(sh==="S"?"Antrede terkunci: putaran tangga menyesuaikan.":"Antrede terkunci: panjang tangga menyesuaikan."):"")+(st.lkR?" Optrede terkunci: jumlah anak tangga mengikuti tinggi.":""):"Ketuk gembok untuk mengunci optrede / antrede; ukuran tangga lalu menyesuaikan.";
+  $("Bon").checked=!!st.Bon;$("Bbox").classList.toggle("hide",!st.Bon);
+  $("betonBox").classList.toggle("hide",st.type!=="beton");$("besiBox").classList.toggle("hide",st.type!=="besi");
+}
+function read(){
+  for(const k of NUMS)st[k]=parseFloat($(k).value)||0;
+  st.n2=parseInt($("n2").value)||0;st.Bon=$("Bon").checked;st.N=$("N").value;
+  st.pole=+$("pole").value;st.rot=$("rot").value;st.dir=$("dir").value;st.rail=$("rail").value;st.railT=+$("railT").value;
+  st.dm=+$("dm").value;st.db=+$("db").value;st.dbl=$("dbl").checked;
+  st.prof=+$("prof").value;st.plat=+$("plat").value;st.fs=$("fs").value;st.fsb=$("fsb").value;
+  if(st.mode==="RT"){
+    const n=st.n2,tr=n-1-(land()?1:0),t1=Math.ceil(tr/2),t2=tr-t1;
+    if(st.R>0&&st.T>0&&tr>=1&&(!land()||n>=4)){
+      st.H=+(st.R*n).toFixed(2);st.N=String(n);
+      if(st.shape==="I")st.L=+(st.T*tr+LB()).toFixed(2);
+      else if(st.shape==="L"){st.L=+(st.T*t1+st.W).toFixed(2);st.L2=+(st.T*t2+st.W).toFixed(2)}
+      else if(st.shape==="U")st.L=+(st.T*Math.max(t1,t2)+st.W).toFixed(2);
+    }else st.H=0;
+  }
+  st.lkN=0;
+  if(st.mode==="HL"&&(st.lkR||st.lkT)&&st.H>0){
+    const b=isS()?0:(land()?1:0),nmin=land()?4:2;let n=0;
+    if(st.lkR&&st.kR>0)n=Math.max(nmin,Math.round(st.H/st.kR));
+    else if(st.lkT&&st.kT>0){const man=parseInt(st.N);
+      if(man>=nmin)n=man;
+      else{const c=[];for(let k=nmin;k<=80;k++){const tr=k-1-b;if(tr<1)continue;c.push({n:k,tr,sc:(isS()?scS:scI)(st.H/k,st.kT)})}
+        const ok=c.filter(fsOk),pool=st.fs!=="off"&&ok.length?ok:c;pool.sort((a,b)=>a.sc-b.sc);n=pool[0]?pool[0].n:0}}
+    if(n){st.lkN=n;
+      if(st.lkT&&st.kT>0&&!isS()){const tr=n-1-b,t1=Math.ceil(tr/2),t2=tr-t1,T=st.kT;
+        if(st.shape==="I")st.L=+(T*tr+LB()).toFixed(2);
+        else if(st.shape==="L"){st.L=+(T*t1+st.W).toFixed(2);st.L2=+(T*t2+st.W).toFixed(2)}
+        else st.L=+(T*Math.max(t1,t2)+st.W).toFixed(2)}}
+  }
+  try{localStorage.setItem("hitungTangga",JSON.stringify(st))}catch(e){}
+}
+const scI=(R,T)=>{let sc=Math.abs(2*R+T-63);if(R<15)sc+=(15-R)*3;if(R>19)sc+=(R-19)*3;if(T<25)sc+=(25-T)*2;if(T>32)sc+=(T-32);return sc};
+const scS=(R,T)=>{let sc=Math.abs(2*R+T-63);if(R>22)sc+=(R-22)*3;if(R<17)sc+=(17-R)*2;if(T<19)sc+=(19-T)*3;if(T>28)sc+=(T-28);return sc};
+function optionS(n){
+  const tr=n-1;if(tr<1||!(st.H>0)||!(st.D>0))return null;
+  const {rw,ro,rc}=sp();if(ro-rc<30)return null;
+  const R=st.H/n;let T,rot;
+  if(st.mode==="RT"){T=st.T;rot=tr*T/rw*180/Math.PI}
+  else if(st.lkT&&st.kT>0){T=st.kT;rot=tr*T/rw*180/Math.PI}
+  else if(parseFloat(st.rot)>0){rot=parseFloat(st.rot);T=rw*rot*Math.PI/180/tr}
+  else{T=Math.max(19,Math.min(26,63-2*R));rot=tr*T/rw*180/Math.PI}
+  if(!(T>0))return null;
+  const blon=2*R+T;let sc=Math.abs(blon-63);
+  if(R>22)sc+=(R-22)*3;if(R<17)sc+=(17-R)*2;if(T<19)sc+=(19-T)*3;if(T>28)sc+=(T-28);
+  return{n,R,T,tr,blon,sc,rot,alpha:rot/tr,ang:Math.atan(R/T)*180/Math.PI};
+}
+function option(n){
+  if(isS())return optionS(n);
+  const tr=n-1-(land()?1:0);if(tr<1||(land()&&n<4))return null;
+  let T;
+  if(st.shape==="I")T=(st.L-LB())/tr;
+  else if(st.shape==="L"){const r1=st.L-st.W,r2=st.L2-st.W;if(r1<=0||r2<=0||tr<2)return null;const t1=Math.max(1,Math.min(tr-1,Math.round(tr*r1/(r1+r2))));T=Math.min(r1/t1,r2/(tr-t1))}
+  else T=(st.L-st.W)/Math.ceil(tr/2);
+  if(!(T>0)||!(st.H>0))return null;
+  const R=st.H/n,blon=2*R+T;let sc=Math.abs(blon-63);
+  if(R<15)sc+=(15-R)*3;if(R>19)sc+=(R-19)*3;if(T<25)sc+=(25-T)*2;if(T>32)sc+=(T-32);
+  return{n,R,T,tr,blon,sc,ang:Math.atan(R/T)*180/Math.PI};
+}
+function split(o){ // jumlah injakan lengan 1 & 2
+  if(!land())return[o.tr,0];
+  let t1;
+  if(st.shape==="L"&&st.mode==="HL"){const r1=Math.max(st.L-st.W,1),r2=Math.max(st.L2-st.W,1);t1=Math.round(o.tr*r1/(r1+r2))}
+  else t1=Math.ceil(o.tr/2);
+  t1=Math.max(1,Math.min(o.tr-1,t1));return[t1,o.tr-t1];
+}
+function footprint(o,t1,t2){
+  const T=o.T,W=st.W;
+  if(isS())return{a:st.D,b:st.D,txt:"Ø "+f1(st.D)+" cm"};
+  if(st.shape==="I")return{a:T*o.tr+LB(),b:W,txt:f1(T*o.tr+LB())+" × "+f1(W,0)+" cm"};
+  if(st.shape==="L"){const a=T*t1+W,b=T*t2+W;return{a,b,txt:f1(a)+" × "+f1(b)+" cm"}}
+  const a=T*Math.max(t1,t2)+W,b=2*W+st.gap;return{a,b,txt:f1(a)+" × "+f1(b)+" cm"};
+}
+const FS=["Lahir","Tua","Sakit","Mati","Derita"];
+const fsCnt=o=>st.fsb==="inj"?o.tr:o.n;
+const fsName=o=>FS[(fsCnt(o)-1)%5];
+const fsOk=o=>{const r=(fsCnt(o)-1)%5;return st.fs==="1"?r===0:r<=1};
+function solve(){
+  const all=[];for(let n=2;n<=80;n++){const o=option(n);if(o)all.push(o)}
+  if(!all.length)return null;
+  const okF=all.filter(fsOk),pool=st.fs!=="off"&&okF.length?okF:all;
+  const best=[...pool].sort((a,b)=>a.sc-b.sc)[0];
+  const man=st.lkN||parseInt(st.N);const pick=(man&&option(man))||best;
+  const near=all.filter(o=>Math.abs(o.n-best.n)<=(st.fs==="off"?3:5)||o.n===pick.n);
+  return{pick,best,near};
+}
+function geom(o){
+  const {n,R,T}=o,m=R/T,[t1,t2]=split(o),fl=[];
+  if(land()){fl.push({x0:0,y0:0,n:t1+1});fl.push({x0:T*t1+LB(),y0:(t1+1)*R,n:t2+1})}else fl.push({x0:0,y0:0,n});
+  const top=[],marks=[];let k=0;
+  fl.forEach((F,fi)=>{F.xe=F.x0+T*(F.n-1);
+    for(let i=0;i<F.n;i++){const x=F.x0+i*T;top.push([x,F.y0+i*R],[x,F.y0+(i+1)*R]);k++;
+      const nm=k===n?"Lantai atas":(fi===0&&i===F.n-1&&land()?"Bordes":"Injakan "+k);
+      const lab=st.shape==="I"||isS()?nm:"Lengan "+(fi+1)+" · "+nm;
+      marks.push([lab,k*R,st.shape==="I"?x:x-F.x0]);}
+    if(fi===0&&land())top.push([fl[1]?fl[1].x0:F.xe,F.y0+F.n*R]);
+  });
+  return{fl,top,marks,m,t1,t2,Ls:T*o.tr+LB(),fp:footprint(o,t1,t2)};
+}
+
+const DEFS=`<defs><pattern id="hc" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="var(--mut)" stroke-width="1" opacity=".45"/></pattern>
+<marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1L9 5L0 9z" fill="var(--acc)"/></marker>
+<marker id="wk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink)"/></marker></defs>`;
+const dim=(x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--acc)" stroke-width="1.4" marker-start="url(#ar)" marker-end="url(#ar)"/>`;
+
+function draw(){
+  const s=$("svg"),W=s.clientWidth,Hh=s.clientHeight;if(!calc||!W){s.innerHTML="";return}
+  const o=calc.pick,{fl,top,m,Ls}=calc.g,H=st.H,L=Ls,t=st.t,cos=Math.cos(Math.atan(m));
+  const ext=Math.max(40,L*.14),ml=W<520?54:78,mr=16,mb=W<520?52:62;
+  const sc=Math.min((W-ml-mr)/(L+ext*1.6),(Hh-22-mb)/(H+30));
+  const ox=ml+ext*.6*sc+((W-ml-mr)-(L+ext*1.6)*sc)/2, oy=Hh-mb-20*sc;
+  const X=x=>(ox+x*sc).toFixed(1),Y=y=>(oy-y*sc).toFixed(1),P=a=>a.map(p=>X(p[0])+","+Y(p[1])).join(" ");
+  let g=DEFS;
+  g+=`<rect x="${X(-ext*.6)}" y="${Y(0)}" width="${((L+ext*1.6)*sc).toFixed(1)}" height="${(12*sc+6).toFixed(1)}" fill="url(#hc)"/><line x1="${X(-ext*.6)}" y1="${Y(0)}" x2="${X(L+ext)}" y2="${Y(0)}" stroke="var(--ink)" stroke-width="2"/>`;
+  g+=`<rect x="${X(L)}" y="${Y(H)}" width="${(ext*sc).toFixed(1)}" height="${(13*sc).toFixed(1)}" fill="var(--conc)" stroke="var(--ink)" stroke-width="1.5"/><rect x="${X(L)}" y="${Y(H)}" width="${(ext*sc).toFixed(1)}" height="${(13*sc).toFixed(1)}" fill="url(#hc)"/>`;
+  if(st.type==="beton"){
+    const bot=[],F0=fl[0];bot.push([F0.x0+(t/cos)/m,0]);
+    if(fl.length>1){const h1=fl[1].y0;let xa=F0.x0+(h1-t+t/cos-F0.y0)/m,xb=fl[1].x0+(t/cos-t)/m;if(xb<xa){xa=xb=(xa+xb)/2}bot.push([xa,h1-t],[xb,h1-t])}
+    const Fl=fl[fl.length-1];bot.push([L,Fl.y0+(L-Fl.x0)*m-t/cos]);
+    const poly=[...top,[L,H],...bot.reverse()];
+    g+=`<polygon points="${P(poly)}" fill="var(--conc)" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/><polygon points="${P(poly)}" fill="url(#hc)"/>`;
+  }else{
+    const d=PROF[st.prof][2];
+    fl.forEach(F=>{const a=F.y0+o.R-2,dd=d/cos,top0=F.x0+(F.y0-a)/m,b0=F.x0+(F.y0-a+dd)/m;
+      const pts=[[top0,F.y0],[b0,F.y0],[F.xe,a+(F.xe-F.x0)*m-dd],[F.xe,a+(F.xe-F.x0)*m]];
+      g+=`<polygon points="${P(pts)}" fill="var(--steel)" opacity=".85" stroke="var(--ink)" stroke-width="1.2"/>`;
+      for(let i=0;i<F.n-1;i++){const y=F.y0+(i+1)*o.R,x=F.x0+i*o.T;
+        g+=`<line x1="${X(x)}" y1="${Y(y)}" x2="${X(x+o.T)}" y2="${Y(y)}" stroke="var(--ink)" stroke-width="4" stroke-linecap="square"/><line x1="${X(x)}" y1="${Y(y)}" x2="${X(x)}" y2="${Y(y-o.R)}" stroke="var(--mut)" stroke-width="1" stroke-dasharray="3 3"/>`}
+    });
+    if(fl.length>1){const F=fl[0],y=fl[1].y0;g+=`<line x1="${X(F.xe)}" y1="${Y(y)}" x2="${X(fl[1].x0)}" y2="${Y(y)}" stroke="var(--ink)" stroke-width="4"/><rect x="${X(F.xe)}" y="${Y(y)}" width="${((fl[1].x0-F.xe)*sc).toFixed(1)}" height="${(d*sc).toFixed(1)}" fill="var(--steel)" opacity=".5"/>`}
+    const xe=fl[fl.length-1].xe;g+=`<line x1="${X(xe)}" y1="${Y(H)}" x2="${X(xe)}" y2="${Y(H-o.R)}" stroke="var(--mut)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  }
+  if(st.rail!=="0"){const rh=st.railH;
+    fl.forEach((F,fi)=>{const y0=F.y0+o.R+rh,y1=F.y0+F.n*o.R+rh;
+      g+=`<line x1="${X(F.x0)}" y1="${Y(y0)}" x2="${X(F.xe)}" y2="${Y(y1)}" stroke="var(--steel)" stroke-width="2.5" stroke-linecap="round"/>`;
+      for(let i=0;i<F.n-1;i++){const x=F.x0+i*o.T+o.T/2,yb=F.y0+(i+1)*o.R;g+=`<line x1="${X(x)}" y1="${Y(yb)}" x2="${X(x)}" y2="${Y(yb+rh+o.R*(.5))}" stroke="var(--steel)" stroke-width="1" opacity=".8"/>`}
+      if(fi===0&&fl[1]){const yl=fl[1].y0+rh;g+=`<line x1="${X(F.xe)}" y1="${Y(yl)}" x2="${X(fl[1].x0)}" y2="${Y(yl)}" stroke="var(--steel)" stroke-width="2.5"/>`}});
+  }
+  const dx=+X(0)-(W<520?30:44),dy=+Y(0)+(W<520?28:36),fs=W<520?13:14;
+  g+=`<line x1="${dx-6}" y1="${Y(H)}" x2="${X(L)}" y2="${Y(H)}" stroke="var(--acc)" stroke-width=".8" stroke-dasharray="2 3"/>`+dim(dx,Y(0),dx,Y(H));
+  g+=`<text x="${dx-8}" y="${Y(H/2)}" transform="rotate(-90 ${dx-8} ${Y(H/2)})" text-anchor="middle" font-size="${fs}" font-weight="600" fill="var(--acc)">H ${f1(H)} cm</text>`;
+  g+=`<line x1="${X(L)}" y1="${Y(H)}" x2="${X(L)}" y2="${dy+6}" stroke="var(--acc)" stroke-width=".8" stroke-dasharray="2 3"/>`+dim(X(0),dy,X(L),dy);
+  const lt=(st.shape==="I"?"L ":"Bentangan ")+f1(L)+" cm",mx=((+X(0)+ +X(L))/2).toFixed(1);
+  g+=`<rect x="${(mx-lt.length*4-6).toFixed(1)}" y="${dy-9}" width="${lt.length*8+12}" height="18" fill="var(--paper)"/><text x="${mx}" y="${dy+5}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="var(--acc)">${lt}</text>`;
+  const F=fl[0],i=Math.max(0,Math.min(F.n-2,Math.floor(F.n/2)-1)),sx=F.x0+i*o.T,sy=F.y0+(i+1)*o.R;
+  if(F.n>=2){const tyy=+Y(sy)-12;g+=dim(X(sx),tyy,X(sx+o.T),tyy)+`<text x="${((+X(sx)+ +X(sx+o.T))/2).toFixed(1)}" y="${tyy-6}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--acc)">T ${f1(o.T)}</text>`;
+    const rx=+X(sx)-10;g+=dim(rx,Y(sy-o.R),rx,Y(sy))+`<text x="${rx-5}" y="${(+Y(sy-o.R/2)+4).toFixed(1)}" text-anchor="end" font-size="${fs}" font-weight="700" fill="var(--acc)">R ${f1(o.R)}</text>`}
+  const ar=Math.min(46,L*sc*.25),ax=+X(0),ay=+Y(0),a=Math.atan(m);
+  g+=`<path d="M${(ax+ar).toFixed(1)} ${ay} A${ar} ${ar} 0 0 0 ${(ax+ar*Math.cos(a)).toFixed(1)} ${(ay-ar*Math.sin(a)).toFixed(1)}" fill="none" stroke="var(--acc)" stroke-width="1.4"/><text x="${(ax+ar+6).toFixed(1)}" y="${(ay-6).toFixed(1)}" font-size="${fs}" font-weight="600" fill="var(--acc)">${f1(o.ang,0)}°</text>`;
+  if(fl.length>1){const xm=(fl[0].xe+fl[1].x0)/2;g+=`<text x="${X(xm)}" y="${(+Y(fl[1].y0)-8).toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="var(--ink)">Bordes</text>`}
+  g+=`<text x="${X(L+ext)}" y="${(+Y(H)-6).toFixed(1)}" text-anchor="end" font-size="${fs-1}" fill="var(--mut)">Lantai atas</text>`;
+  s.innerHTML=g;
+}
+
+function planParts(){ // semua ukuran cm, sumbu y ke bawah
+  const o=calc.pick,{t1,t2}=calc.g,T=o.T,W=st.W,tr=[],walk=[];let landR=null,floor;
+  const fx=(x0,y0,k,dir,num)=>{ // satu injakan
+    if(dir==="x+")tr.push([x0+(k-1)*T,y0,T,W,num]);else if(dir==="y+")tr.push([x0,y0+(k-1)*T,W,T,num]);else tr.push([x0-k*T,y0,T,W,num])};
+  if(st.shape==="I"){
+    const a=land()?t1:o.tr;for(let k=1;k<=a;k++)fx(0,0,k,"x+",k);
+    if(land()){landR=[T*t1,0,st.B,W];const s2=T*t1+st.B;for(let k=1;k<=t2;k++)fx(s2,0,k,"x+",t1+k)}
+    const end=T*o.tr+LB();floor=[end,0,40,W];walk.push([0,W/2],[end,W/2]);
+  }else if(st.shape==="L"){
+    for(let k=1;k<=t1;k++)fx(0,0,k,"x+",k);const a=T*t1;landR=[a,0,W,W];
+    for(let k=1;k<=t2;k++)fx(a,W,k,"y+",t1+k);floor=[a,W+T*t2,W,40];
+    walk.push([0,W/2],[a+W/2,W/2],[a+W/2,W+T*t2]);
+  }else{
+    const g=st.gap;for(let k=1;k<=t1;k++)fx(0,0,k,"x+",k);const a=T*t1;landR=[a,0,W,2*W+g];
+    for(let k=1;k<=t2;k++)fx(a,W+g,k,"x-",t1+k);floor=[a-T*t2-40,W+g,40,W];
+    walk.push([0,W/2],[a+W/2,W/2],[a+W/2,W+g+W/2],[a-T*t2,W+g+W/2]);
+  }
+  return{tr,landR,floor,walk};
+}
+function drawSpiral(){
+  const s=$("plan"),W=s.clientWidth,Hh=s.clientHeight,o=calc.pick,{ro,rc,rw}=sp(),fs=W<520?11:12;
+  const sc=Math.min((W-90)/(2*ro),(Hh-80)/(2*ro)),cx=W/2,cy=24+ro*sc,dir=st.dir==="cw"?1:-1,a0=Math.PI/2;
+  const P=(r,a)=>[(cx+r*sc*Math.cos(a)).toFixed(1),(cy+r*sc*Math.sin(a)).toFixed(1)];
+  const al=o.alpha*Math.PI/180,sw=dir>0?1:0,fill=st.type==="beton"?"var(--conc)":"color-mix(in srgb,var(--steel) 30%,var(--paper))";
+  let g=DEFS+`<circle cx="${cx}" cy="${cy}" r="${(ro*sc).toFixed(1)}" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 4"/>`;
+  const showN=ro*.8*al*sc>=13;
+  for(let k=1;k<=o.tr;k++){const t1=a0+dir*(k-1)*al,t2=a0+dir*k*al,[a,b]=P(rc,t1),[c,d]=P(ro,t1),[e,f]=P(ro,t2),[h,i]=P(rc,t2);
+    g+=`<path d="M${a} ${b}L${c} ${d}A${(ro*sc).toFixed(1)} ${(ro*sc).toFixed(1)} 0 0 ${sw} ${e} ${f}L${h} ${i}A${(rc*sc).toFixed(1)} ${(rc*sc).toFixed(1)} 0 0 ${1-sw} ${a} ${b}Z" fill="${fill}" stroke="var(--ink)" stroke-width="1.1"/>`;
+    if(showN){const [nx,ny]=P(ro-(ro-rc)*.2,(t1+t2)/2);g+=`<text x="${nx}" y="${ny}" text-anchor="middle" dominant-baseline="middle" font-size="${fs-1}" fill="var(--mut)">${k}</text>`}}
+  const tEnd=a0+dir*o.tr*al,[fx1,fy1]=P(rc,tEnd),[fx2,fy2]=P(ro+8/sc,tEnd),[lx,ly]=P(ro+16/sc,tEnd);
+  g+=`<line x1="${fx1}" y1="${fy1}" x2="${fx2}" y2="${fy2}" stroke="var(--ink)" stroke-width="4"/><text x="${lx}" y="${ly}" text-anchor="${Math.cos(tEnd)>0.2?"start":Math.cos(tEnd)<-0.2?"end":"middle"}" dominant-baseline="middle" font-size="${fs}" fill="var(--mut)">Lt. atas</text>`;
+  const pts=[];for(let j=0;j<=60;j++){pts.push(P(rw,a0+dir*(o.tr*al)*(j/60)*.97).join(","))}
+  g+=`<polyline points="${pts.join(" ")}" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#wk)"/>`;
+  const [sx,sy]=P(rw,a0);g+=`<circle cx="${sx}" cy="${sy}" r="4" fill="var(--ink)"/><text x="${sx}" y="${(+sy+fs+8).toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--ink)">NAIK</text>`;
+  g+=`<circle cx="${cx}" cy="${cy}" r="${(rc*sc).toFixed(1)}" fill="var(--ink)"/>`;
+  if(st.rail!=="0")g+=`<circle cx="${cx}" cy="${cy}" r="${(ro*sc-2).toFixed(1)}" fill="none" stroke="var(--steel)" stroke-width="3" stroke-dasharray="${(o.tr*al*ro*sc).toFixed(0)} 9999" transform="rotate(${(dir>0?90:90-o.tr*o.alpha).toFixed(2)} ${cx} ${cy})"/>`;
+  const by=cy+ro*sc+44;g+=dim((cx-ro*sc).toFixed(1),by,(cx+ro*sc).toFixed(1),by)+`<text x="${cx}" y="${by-5}" text-anchor="middle" font-size="${fs+1}" font-weight="600" fill="var(--acc)">Ø ${f1(st.D)} cm · putaran ${f1(o.rot,0)}°</text>`;
+  s.innerHTML=g;
+}
+function drawPlan(){
+  if(calc&&isS())return drawSpiral();
+  const s=$("plan"),W=s.clientWidth,Hh=s.clientHeight;if(!calc||!W){s.innerHTML="";return}
+  const {tr,landR,floor,walk}=planParts(),rects=[...tr,...(landR?[landR]:[])];
+  const bb=(rs)=>{let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const r of rs){x0=Math.min(x0,r[0]);y0=Math.min(y0,r[1]);x1=Math.max(x1,r[0]+r[2]);y1=Math.max(y1,r[1]+r[3])}return[x0,y0,x1,y1]};
+  const fp=bb(rects),all=bb([...rects,floor]),ml=14,mr=W<520?40:52,mt=12,mb=W<520?40:46;
+  const sc=Math.min((W-ml-mr)/(all[2]-all[0]),(Hh-mt-mb)/(all[3]-all[1]));
+  const ox=ml+((W-ml-mr)-(all[2]-all[0])*sc)/2-all[0]*sc,oy=mt+((Hh-mt-mb)-(all[3]-all[1])*sc)/2-all[1]*sc;
+  const X=x=>(ox+x*sc).toFixed(1),Y=y=>(oy+y*sc).toFixed(1),fs=W<520?11:12;
+  const R=(r,fill,sw)=>`<rect x="${X(r[0])}" y="${Y(r[1])}" width="${(r[2]*sc).toFixed(1)}" height="${(r[3]*sc).toFixed(1)}" fill="${fill}" stroke="var(--ink)" stroke-width="${sw}"/>`;
+  const fill=st.type==="beton"?"var(--conc)":"color-mix(in srgb,var(--steel) 30%,var(--paper))";
+  let g=DEFS+R(floor,"url(#hc)",1)+`<text x="${X(floor[0]+floor[2]/2)}" y="${Y(floor[1]+floor[3]/2)}" text-anchor="middle" dominant-baseline="middle" font-size="${fs-1}" fill="var(--mut)" transform="rotate(${floor[2]<floor[3]?-90:0} ${X(floor[0]+floor[2]/2)} ${Y(floor[1]+floor[3]/2)})">Lt. atas</text>`;
+  if(landR)g+=R(landR,fill,1.6)+`<text x="${X(landR[0]+landR[2]/2)}" y="${(+Y(landR[1]+landR[3]/2)+(st.shape==="U"?0:-12)).toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="var(--ink)">Bordes</text>`;
+  const showN=calc.pick.T*sc>=15;
+  for(const r of tr){g+=R(r,fill,1.2);if(showN){const hz=r[2]<=r[3];g+=`<text x="${X(r[0]+r[2]*(hz?.5:.25))}" y="${Y(r[1]+r[3]*(hz?.25:.5))}" text-anchor="middle" dominant-baseline="middle" font-size="${fs-1}" fill="var(--mut)">${r[4]}</text>`}}
+  g+=`<polyline points="${walk.map(p=>X(p[0])+","+Y(p[1])).join(" ")}" fill="none" stroke="var(--ink)" stroke-width="1.6" marker-end="url(#wk)"/><circle cx="${X(walk[0][0])}" cy="${Y(walk[0][1])}" r="4" fill="var(--ink)"/>`;
+  g+=`<text x="${(+X(walk[0][0])+6).toFixed(1)}" y="${(+Y(walk[0][1])+fs+4).toFixed(1)}" font-size="${fs}" font-weight="700" fill="var(--ink)">NAIK</text>`;
+  const by=+Y(all[3])+(W<520?22:26),rx=+X(all[2])+(W<520?20:26);
+  g+=dim(X(fp[0]),by,X(fp[2]),by)+`<text x="${X((fp[0]+fp[2])/2)}" y="${by-5}" text-anchor="middle" font-size="${fs+1}" font-weight="600" fill="var(--acc)">${f1(fp[2]-fp[0])} cm</text>`;
+  g+=dim(rx,Y(fp[1]),rx,Y(fp[3]))+`<text x="${rx+14}" y="${Y((fp[1]+fp[3])/2)}" transform="rotate(-90 ${rx+14} ${Y((fp[1]+fp[3])/2)})" text-anchor="middle" font-size="${fs+1}" font-weight="600" fill="var(--acc)">${f1(fp[3]-fp[1])} cm</text>`;
+  s.innerHTML=g;
+}
+
+const dN=(d,def)=>(def?"D":"Ø")+d;
+function rebar(o,g){
+  if(st.type!=="beton"||isS())return null;
+  const c=2.5,W=st.W,dm=st.dm,db=st.db,sm=st.sm,sb=st.sb,ldm=40*dm/10,rows=[],tot={};
+  if(!(sm>0&&sb>0))return null;
+  const add=(el,d,def,n,cut,lab)=>{rows.push([el,lab||dN(d,def)+(def?"-"+f1(sm*10,0):"-"+f1(sb*10,0)),n,cut,n*cut/100]);const k=dN(d,def);tot[k]=tot[k]||{d,m:0};tot[k].m+=n*cut/100};
+  const nl=st.dbl?2:1;
+  g.fl.forEach((F,i)=>{const l=Math.hypot(o.T*(F.n-1),o.R*F.n),nm=g.fl.length>1?"Lengan "+(i+1):"Pelat tangga";
+    add(nm+" · utama"+(st.dbl?" (atas+bawah)":""),dm,true,nl*(Math.floor((W-2*c)/sm)+1),Math.round(l+2*ldm));
+    add(nm+" · bagi"+(st.dbl?" (atas+bawah)":""),db,false,nl*(Math.floor(l/sb)+1),Math.round(W-2*c+10));
+    add(nm+" · sudut anak tangga",db,false,F.n-1,Math.round(W-2*c),dN(db,false)+" 1/anak tangga")});
+  if(land()){const a=st.shape==="U"?2*W+st.gap:LB(),b=W;
+    const e=(len,other)=>[nl*(Math.floor((other-2*c)/sm)+1),Math.round(len-2*c+2*ldm)];
+    let [n1,c1]=e(a,b),[n2,c2]=e(b,a);
+    rows.push(["Bordes · arah "+f1(a,0)+" cm"+(st.dbl?" (atas+bawah)":""),dN(dm,true)+"-"+f1(sm*10,0),n1,c1,n1*c1/100],["Bordes · arah "+f1(b,0)+" cm"+(st.dbl?" (atas+bawah)":""),dN(dm,true)+"-"+f1(sm*10,0),n2,c2,n2*c2/100]);
+    const k=dN(dm,true);tot[k]=tot[k]||{d:dm,m:0};tot[k].m+=(n1*c1+n2*c2)/100}
+  const sum=Object.entries(tot).map(([k,v])=>{const m=v.m*1.05;return[k,m,Math.ceil(m/12),m*kgm(v.d)]});
+  return{rows,sum,kg:sum.reduce((a,b)=>a+b[3],0),note:`Panjang potong sudah termasuk penjangkaran ${f1(ldm,0)} cm (40D) di tiap ujung tulangan utama dan kait tulangan bagi. Selimut beton ${f1(c)} cm. Ini konfigurasi praktis lapangan, bukan hasil desain struktur — bentang di atas ±3,5 m atau beban khusus perlu dihitung perencana.`};
+}
+function railing(o,g){
+  if(st.rail==="0")return null;
+  const sides=isS()?1:+st.rail,ext=30,rt=RAIL[st.railT];let len;
+  if(isS()){const {ro}=sp();len=Math.hypot(o.rot*Math.PI/180*ro,st.H)+ext}
+  else{const fl=g.fl.reduce((a,F)=>a+Math.hypot(o.T*(F.n-1),o.R*(F.n-1))+ext,0),W=st.W;
+    const inL=st.shape==="I"?LB():st.shape==="L"?0:st.gap,outL=st.shape==="I"?LB():st.shape==="L"?2*W:4*W+st.gap;
+    len=fl+inL+(sides===2?fl+outL:0)}
+  const m=len/100,hr=m*1.05,rows=[["Panjang railing ("+(isS()?"sisi luar":sides===2?"2 sisi":"1 sisi")+")",f1(m,2)+" m"],["Pegangan tangan +5%",f1(hr,2)+" m · "+Math.ceil(hr/6)+" batang 6 m · "+f1(hr*rt[1],0)+" kg"]];
+  if(st.railT===2){const a=m*(st.railH-10)/100;rows.push(["Kaca tempered 10 mm (tinggi "+f1(st.railH-10,0)+" cm)",f1(a,2)+" m²"],["Klem / spider kaca (tiap ±100 cm)",Math.ceil(len/100)+1+" titik"])}
+  else{const nb=Math.ceil(len/st.railS)+1,lb=nb*(st.railH-5)/100;rows.push(["Jeruji (jarak "+f1(st.railS,0)+" cm, tinggi "+f1(st.railH-5,0)+" cm)",nb+" pcs · "+f1(lb,1)+" m · "+Math.ceil(lb*1.05/6)+" batang 6 m"],["Berat jeruji",f1(lb*rt[2],0)+" kg"],["Tiang utama (tiap ±120 cm)",Math.ceil(len/120)+1+" pcs"])}
+  return{rows,note:"Tinggi railing umum 90–100 cm. Jarak bersih jeruji sebaiknya maks. 10–12 cm supaya aman untuk anak. Panjang sudah termasuk tambahan ±30 cm di ujung tiap lengan."+(isS()?" Railing tangga putar mengikuti lengkung luar dan biasanya dibuat bending.":"")};
+}
+function materialsS(o){
+  const {ro,rc}=sp(),al=o.alpha*Math.PI/180,wA=al/2*(ro*ro-rc*rc),rows=[];let note;
+  if(st.type==="beton"){const V=o.tr*wA*(o.R/2+st.t)/1e6,V5=V*1.05;
+    rows.push(["Volume beton anak tangga",f1(V,2)+" m³"],["Volume + 5% susut",f1(V5,2)+" m³"],["Semen (K-225, 371 kg/m³)",f1(V5*371,0)+" kg ≈ "+f1(Math.ceil(V5*371/50),0)+" sak 50 kg"],["Pasir (698 kg/m³)",f1(V5*698,0)+" kg"],["Kerikil (1.047 kg/m³)",f1(V5*1047,0)+" kg"],["Besi tulangan (±120 kg/m³)",f1(V*120,0)+" kg"]);
+    note="Tangga putar beton biasanya dicor per anak tangga pada kolom tengah; volume di atas perkiraan kasar. Kolom tengah dan pembesiannya perlu dirancang khusus oleh perencana struktur.";}
+  else{const [pn,pd,pkg]=POLE[st.pole],[ptn,pl]=PLAT[st.plat],pl_=(o.H+100)/100,pA=o.tr*wA/1e4,sk=2*o.tr*(ro-rc)/100;
+    const tot=(pl_*pkg+pA*pl+sk*3.77)*1.1;
+    rows.push(["Tiang tengah "+pn+" (tebal 4,5 mm)",f1(pl_,2)+" m · "+f1(pl_*pkg,0)+" kg"],[ptn+" ("+o.tr+" injakan bentuk juring)",f1(pA,2)+" m² · "+f1(pA*pl,0)+" kg"],
+      ["Ukuran juring injakan","R dalam "+f1(rc,1)+" · R luar "+f1(ro,0)+" cm · sudut "+f1(o.alpha,1)+"°"],["Lebar injakan di tepi luar",f1(ro*al,1)+" cm"],
+      ["Siku L50.50.5 rangka injakan ("+2*o.tr+" pcs)",f1(sk,2)+" m · "+f1(sk*3.77,0)+" kg"],["Selongsong pipa per injakan",o.tr+" pcs"],["Total berat + 10% (las, sisa potong)",f1(tot,0)+" kg"]);
+    note="Tiang tengah dipasang dengan base plate dan angkur ke pelat lantai bawah, diikat ke balok/plat atas. Ukuran tiang perlu dicek perencana struktur untuk tangga tinggi atau diameter besar.";}
+  return{rows,note};
+}
+function materials(o,g){
+  if(isS())return materialsS(o);
+  const W=st.W,rows=[];let note="";
+  let Ls=0;g.fl.forEach(F=>{Ls+=Math.hypot(o.T*(F.n-1),o.R*F.n)});
+  if(st.type==="beton"){
+    let Vp=0,Vs=0,side=0;const t=st.t;
+    g.fl.forEach(F=>{const l=Math.hypot(o.T*(F.n-1),o.R*F.n);Vp+=l*t*W;Vs+=(F.n-1)*o.R*o.T/2*W;side+=2*(l*t+(F.n-1)*o.R*o.T/2)});
+    const V=(Vp+Vs+landA()*t)/1e6,V5=V*1.05;
+    const bek=(Ls*W+side+landA()+landP()/2*t+o.n*o.R*W)/1e4;
+    rows.push(["Volume beton",f1(V,2)+" m³"],["Volume + 5% susut",f1(V5,2)+" m³"],
+      ["Semen (K-225, 371 kg/m³)",f1(V5*371,0)+" kg ≈ "+f1(Math.ceil(V5*371/50),0)+" sak 50 kg"],
+      ["Pasir (698 kg/m³)",f1(V5*698,0)+" kg"],["Kerikil (1.047 kg/m³)",f1(V5*1047,0)+" kg"],
+      ["Bekisting (luas kontak)",f1(bek,1)+" m²"],(()=>{const rb=rebar(o,g);return rb?["Besi tulangan (detail pembesian)",f1(rb.kg,0)+" kg"]:["Besi tulangan (±100 kg/m³)",f1(V*100,0)+" kg"]})());
+    note="Komposisi mengikuti SNI 7394 untuk K-225. Berat tulangan diambil dari tabel pembesian. Pastikan dicek perencana struktur, terutama bentang panjang dan tumpuan bordes.";
+  }else{
+    const [pn,kg]=PROF[st.prof],[ptn,pkg]=PLAT[st.plat];
+    const strL=(2*Ls+landP())/100,strKg=strL*kg;
+    const pA=(o.tr*o.T*W+landA())/1e4,pKg=pA*pkg;
+    const sikL=2*o.tr*o.T/100,sikKg=sikL*2.42,tot=(strKg+pKg+sikKg)*1.1;
+    rows.push(["Ibu tangga "+pn+(land()?" + rangka bordes":" (2 sisi)"),f1(strL,2)+" m · "+f1(strKg,0)+" kg"],
+      ["Batang profil 6 m",f1(Math.ceil(strL/6),0)+" batang"],
+      [ptn+" ("+o.tr+" injakan"+(land()?" + bordes":"")+")",f1(pA,2)+" m² · "+f1(pKg,0)+" kg"],
+      ["Plat ukuran potong injakan",f1(o.T,1)+" × "+f1(W,0)+" cm"],
+      ["Siku L40.40.4 dudukan ("+2*o.tr+" pcs)",f1(sikL,2)+" m · "+f1(sikKg,0)+" kg"],
+      ["Total berat + 10% (las, sisa potong)",f1(tot,0)+" kg"]);
+    note="Berat profil dan plat bordes adalah nilai perkiraan per meter/m². Bordes L/U butuh tiang atau tumpuan ke dinding; ukuran profil perlu dicek perencana struktur.";
+  }
+  return{rows,note};
+}
+
+function run(){
+  read();fill();const r=st.H>0?solve():null,M=$("msgs"),rt=st.mode==="RT";
+  if(!r){calc=null;draw();drawPlan();M.innerHTML=`<li style="--c:var(--bad)">Ukuran belum valid. Isi semua angka (lebih dari 0). Tangga dengan bordes, L atau U minimal 4 optrede, dan panjang harus lebih besar dari bordes / lebar tangga.</li>`;
+    for(const k of["rR","rT","rN","rA"])$(k).textContent="–";$("opt").innerHTML=$("mark").innerHTML=$("mat").innerHTML="";return}
+  const o=r.pick,g=geom(o);calc={pick:o,g};
+  $("k1").textContent=rt?"Tinggi total tangga":"Optrede (tinggi)";
+  $("k2").textContent=rt?(isS()?"Putaran total":st.shape==="I"?"Panjang datar tangga":"Ukuran denah"):(isS()?"Injakan (garis jalan)":"Antrede (injakan)");
+  $("rR").innerHTML=f1(rt?st.H:o.R)+"<small> cm</small>";
+  $("rT").classList.toggle("sm",rt&&st.shape!=="I"&&!isS());
+  $("rT").innerHTML=rt&&isS()?f1(o.rot,0)+"<small>°</small>":rt?(st.shape==="I"?f1(st.L)+"<small> cm</small>":f1(g.fp.a,0)+"×"+f1(g.fp.b,0)+"<small> cm</small>"):f1(o.T)+"<small> cm</small>";
+  $("rN").innerHTML=o.n+"<small> · "+o.tr+" injakan</small>";$("rA").innerHTML=f1(o.ang,0)+"<small>°</small>";
+  const ms=[],add=(c,t)=>ms.push(`<li style="--c:var(--${c})">${t}</li>`);
+  if(rt)add("ok",`Tinggi ${o.n} × ${f1(o.R)} = <b>${f1(st.H)} cm</b>`);
+  if(!rt&&(st.lkR||st.lkT)){let t="Dikunci: "+[st.lkR?"optrede "+f1(st.kR,2)+" cm":"",st.lkT?"antrede "+f1(st.kT,2)+" cm":""].filter(Boolean).join(" dan ")+".";
+    if(st.lkR&&Math.abs(o.R-st.kR)>=0.01)t+=` Tinggi ${f1(st.H)} cm ÷ ${o.n} = optrede <b>${f1(o.R,2)} cm</b> (selisih ${o.R>st.kR?"+":""}${f1(o.R-st.kR,2)} cm), karena tinggi lantai harus terbagi rata.`;
+    if(st.lkT)t+=` Ukuran tangga menyesuaikan: <b>${isS()?"putaran "+f1(o.rot,0)+"°":st.shape==="I"?"panjang datar "+f1(st.L)+" cm":"denah "+g.fp.txt}</b>.`;
+    add(st.lkR&&Math.abs(o.R-st.kR)>=0.5?"warn":"ok",t)}
+  const SP=isS()?sp():null;
+  if(isS()){const head=360/o.alpha*o.R;
+    add("ok",`Tangga putar Ø <b>${f1(st.D)} cm</b>, tiang ${POLE[st.pole][0]}, lebar injakan bersih ${f1(SP.w,0)} cm. Putaran <b>${f1(o.rot,0)}°</b>, ${f1(o.alpha,1)}° per anak tangga. Injakan ${f1(o.T)} cm di garis jalan (r = ${f1(SP.rw,0)} cm), ${f1(SP.ro*o.alpha*Math.PI/180)} cm di tepi luar.`);
+    add(SP.w>=65?"ok":"warn",`Lebar injakan bersih ${f1(SP.w,0)} cm ${SP.w>=65?"cukup (min. ±65 cm)":"sempit — perbesar diameter tangga (min. ±65 cm)"}`);
+    add(head>=210?"ok":"bad",`Ruang bebas kepala satu putaran ≈ ${f1(head,0)} cm ${head>=210?"aman (min. ±210 cm termasuk tebal injakan)":"kurang — kurangi jumlah anak tangga per putaran (perbesar optrede) atau perbesar diameter"}`);
+    add(o.R<=22?"ok":"warn",`Optrede ${f1(o.R)} cm ${o.R<=22?"wajar untuk tangga putar (maks. ±22)":"terlalu tinggi — tambah jumlah optrede"}`);
+    add(o.T>=19?"ok":"bad",`Injakan di garis jalan ${f1(o.T)} cm ${o.T>=19?"aman (min. ±19)":"terlalu sempit — tambah putaran atau perbesar diameter"}`);
+  }
+  else if(st.shape!=="I")add("ok",`Tangga ${SHN[st.shape]}: lengan 1 = ${g.t1} injakan, lengan 2 = ${g.t2} injakan, bordes ${st.shape==="L"?f1(st.W,0)+" × "+f1(st.W,0):f1(st.W,0)+" × "+f1(2*st.W+st.gap,0)} cm. Ukuran denah <b>${g.fp.txt}</b>.`);
+  else if(rt)add("ok",`Panjang ${o.tr} × ${f1(o.T)}${st.Bon?" + bordes "+f1(st.B):""} = <b>${f1(st.L)} cm</b>`);
+  if(!isS()){add(o.R>=15&&o.R<=19?"ok":"warn",`Optrede ${f1(o.R)} cm ${o.R>=15&&o.R<=19?"nyaman (15–19)":o.R>19?"terlalu tinggi — tambah jumlah optrede":"rendah — boleh, tapi langkah terasa pendek"}`);
+  add(o.T>=25&&o.T<=32?"ok":o.T<22?"bad":"warn",`Antrede ${f1(o.T)} cm ${o.T>=25&&o.T<=32?"aman untuk telapak kaki":o.T<25?"sempit — perbesar ukuran tangga atau kurangi optrede":"lebar — langkah agak panjang"}`);
+  add(o.blon>=60&&o.blon<=65?"ok":"warn",`Rumus langkah 2R+T = ${f1(o.blon)} cm ${o.blon>=60&&o.blon<=65?"(ideal 60–65)":"(di luar 60–65)"}`);
+  add(o.ang<=38?"ok":o.ang<=45?"warn":"bad",`Kemiringan ${f1(o.ang,0)}° ${o.ang<=38?"nyaman":o.ang<=45?"agak curam":"terlalu curam untuk tangga biasa"}`)}
+  if(!land()&&!isS()&&o.n>18)add("warn",`${o.n} optrede sekali naik cukup melelahkan — pertimbangkan bordes, atau bentuk L / U.`);
+  if(st.fs!=="off")add(fsOk(o)?"ok":"warn",`Feng shui: ${fsCnt(o)} ${st.fsb==="inj"?"injakan":"optrede"} jatuh di <b>${fsName(o)}</b> (${FS.map((x,i)=>i+1+" "+x).join(", ")}, lalu berulang)${fsOk(o)?"":" — pilih baris bertanda ✓ di tabel pilihan"}.`);
+  add("ok",`Sisakan ruang bebas kepala minimal 200 cm di atas tiap injakan${st.shape==="U"?", termasuk di bawah lengan 2":""}.`);
+  M.innerHTML=ms.join("");
+  const fsTd=x=>`<td style="color:var(--${fsOk(x)?"ok":"mut"})">${fsName(x)}${fsOk(x)?" ✓":""}</td>`;
+  if(!rt&&st.lkT){const b=isS()?0:(land()?1:0),rows=[];
+    for(let n=Math.max(land()?4:2,o.n-5);n<=o.n+5;n++){const tr=n-1-b;if(tr<1)continue;const x={n,tr,T:st.kT,R:st.H/n},t1=Math.ceil(tr/2),fp=footprint(x,t1,tr-t1);
+      const c3=isS()?f1(tr*st.kT/sp().rw*180/Math.PI,0)+"°":st.shape==="I"?f1(fp.a)+" cm":fp.txt;
+      rows.push(`<tr tabindex="0" data-n="${n}" class="${n===o.n?"sel":""}"><td>${n}</td><td>${f1(x.R)}</td><td>${f1(x.T)}</td><td>${c3}</td><td>${f1(Math.atan(x.R/x.T)*180/Math.PI,0)}°</td>${fsTd(x)}</tr>`)}
+    $("optH").innerHTML=`<tr><th>Optrede</th><th>Tinggi</th><th>Injakan</th><th>${isS()?"Putaran":st.shape==="I"?"Panjang":"Denah"}</th><th>Sudut</th><th>Feng shui</th></tr>`;$("opt").innerHTML=rows.join("")}
+  else if(rt){const b=land()?1:0,rows=[];
+    for(let n=Math.max(land()?4:2,o.n-5);n<=o.n+5;n++){const x={n,tr:n-1-b,T:st.T},t1=Math.ceil(x.tr/2),fp=footprint(x,t1,x.tr-t1);
+      const c3=isS()?f1((n-1)*st.T/sp().rw*180/Math.PI,0)+"°":st.shape==="I"?f1(fp.a)+" cm":fp.txt;
+      rows.push(`<tr tabindex="0" data-n="${n}" class="${n===o.n?"sel":""}"><td>${n}</td><td>${f1(n*st.R)} cm</td><td>${c3}</td>${fsTd(x)}</tr>`)}
+    $("optH").innerHTML=`<tr><th>Optrede</th><th>Tinggi total</th><th>${isS()?"Putaran":st.shape==="I"?"Panjang datar":"Ukuran denah"}</th><th>Feng shui</th></tr>`;$("opt").innerHTML=rows.join("")}
+  else{$("optH").innerHTML="<tr><th>Optrede</th><th>Tinggi</th><th>Injakan</th><th>2R+T</th><th>Sudut</th><th>Feng shui</th></tr>";
+    $("opt").innerHTML=r.near.map(x=>`<tr tabindex="0" data-n="${x.n}" class="${x.n===o.n?"sel":""}"><td>${x.n}${x.n===r.best.n?" ★":""}</td><td>${f1(x.R)}</td><td>${f1(x.T)}</td><td>${f1(x.blon)}</td><td>${f1(x.ang,0)}°</td>${fsTd(x)}</tr>`).join("")}
+  $("mark").innerHTML=`<tr><td>Awal (muka optrede 1)</td><td>0</td><td>0</td></tr>`+g.marks.map(m=>`<tr><td>${esc(m[0])}</td><td>${f1(m[1])} cm</td><td>${isS()?f1(m[2]/o.T*o.alpha,1)+"°":f1(m[2])+" cm"}</td></tr>`).join("");
+  $("mk3").textContent=isS()?"Sudut":"Jarak datar";
+  $("markNote").textContent=isS()?`Sudut diukur dari garis muka optrede pertama, ${st.dir==="cw"?"searah":"berlawanan"} jarum jam, di sekeliling tiang. Tinggi = permukaan injakan jadi.`:st.shape==="I"?"Jarak diukur mendatar dari muka optrede pertama (bawah). Tinggi = permukaan injakan jadi.":"Jarak diukur mendatar dari muka optrede pertama di masing-masing lengan. Tinggi = permukaan injakan jadi dari lantai bawah.";
+  const mt=materials(o,g);$("matH").textContent="Estimasi material tangga "+st.type+" "+SHN[st.shape];
+  $("mat").innerHTML=mt.rows.map(x=>`<tr><td>${esc(x[0])}</td><td>${esc(x[1])}</td></tr>`).join("");$("matNote").textContent=mt.note;
+  if(!rt){if(!st.lkR)$("kR").value=+o.R.toFixed(1);if(!st.lkT)$("kT").value=+o.T.toFixed(1)}
+  const rb=rebar(o,g),rl=railing(o,g);calc.rb=rb;calc.rl=rl;
+  $("rbCard").classList.toggle("hide",!rb);$("railCard").classList.toggle("hide",!rl);
+  if(rb){$("rb").innerHTML=rb.rows.map(x=>`<tr><td>${esc(x[0])}</td><td>${x[1]}</td><td>${x[2]}</td><td>${f1(x[3],0)} cm</td><td>${f1(x[4],1)} m</td></tr>`).join("");
+    $("rbSum").innerHTML=rb.sum.map(x=>`<tr><td>${x[0]}</td><td>${f1(x[1],1)} m</td><td>${x[2]}</td><td>${f1(x[3],0)} kg</td></tr>`).join("")+`<tr><td><b>Total</b></td><td></td><td></td><td><b>${f1(rb.kg,0)} kg</b></td></tr>`;$("rbNote").textContent=rb.note}
+  if(rl){$("railRows").innerHTML=rl.rows.map(x=>`<tr><td>${esc(x[0])}</td><td>${esc(x[1])}</td></tr>`).join("");$("railNote").textContent=rl.note}
+  $("capS").textContent=isS()?`Potongan bentangan pada garis jalan (r = ${f1(sp().rw,0)} cm)`:st.shape==="I"?"Potongan samping":"Potongan bentangan (lengan dibentangkan lurus)";
+  calc.text=`TANGGA ${st.type.toUpperCase()} ${SHN[st.shape].toUpperCase()}\nTinggi ${f1(st.H)} cm, ${isS()?"putaran "+f1(o.rot,0)+"°":"lebar "+f1(st.W)+" cm"}, ukuran denah ${g.fp.txt}${st.shape==="I"&&st.Bon?", bordes "+f1(st.B)+" cm":""}\n`+(land()&&st.shape!=="I"?`Lengan 1: ${g.t1} injakan, lengan 2: ${g.t2} injakan\n`:"")+`Optrede ${o.n} × ${f1(o.R)} cm\nAntrede ${o.tr} × ${f1(o.T)} cm\n2R+T ${f1(o.blon)} cm, sudut ${f1(o.ang,0)}°\n`+(st.fs!=="off"?`Feng shui: ${fsCnt(o)} ${st.fsb==="inj"?"injakan":"optrede"} = ${fsName(o)}\n`:"")+mt.rows.map(x=>x[0]+": "+x[1]).join("\n")+(rl?"\nRAILING\n"+rl.rows.map(x=>x[0]+": "+x[1]).join("\n"):"")+(rb?"\nPEMBESIAN\n"+rb.sum.map(x=>`${x[0]}: ${f1(x[1],1)} m, ${x[2]} batang 12 m, ${f1(x[3],0)} kg`).join("\n"):"");
+  const fg=$("fig"),fw=fg.clientWidth||600,ex=Math.max(40,g.Ls*.14);
+  fg.style.height=Math.round(Math.min(520,Math.max(240,(fw-94)*(st.H+30)/(g.Ls+ex*1.6)+90)))+"px";
+  if(isS())$("pfig").style.height=Math.round(Math.min(460,Math.max(260,fw-60)))+"px";
+  else{const pp=planParts(),xs=[...pp.tr,pp.floor,...(pp.landR?[pp.landR]:[])];
+  const pw=Math.max(...xs.map(q=>q[0]+q[2]))-Math.min(...xs.map(q=>q[0])),ph=Math.max(...xs.map(q=>q[1]+q[3]))-Math.min(...xs.map(q=>q[1]));
+  $("pfig").style.height=Math.round(Math.min(460,Math.max(180,(fw-70)*ph/pw+70)))+"px"}
+  draw();drawPlan();
+}
+
+$("f").addEventListener("input",run);
+$("seg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;st.type=b.dataset.t;fill();run()});
+$("sseg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;st.shape=b.dataset.s;st.N="";
+  if(st.mode==="HL"&&b.dataset.s!=="I"&&calc){const o=calc.pick,run_=o.T*o.tr;if(b.dataset.s==="L"){st.L=Math.round(run_/2+st.W);st.L2=Math.round(run_/2+st.W)}else st.L=Math.round(run_/2+st.W)}
+  fill();run()});
+const pickRow=e=>{const tr=e.target.closest("tr[data-n]");if(!tr)return;const n=+tr.dataset.n;
+  if(st.mode==="HL"&&st.lkR)$("kR").value=+(st.H/n).toFixed(2);else $(st.mode==="RT"?"n2":"N").value=n;run()};
+document.querySelectorAll(".lkb").forEach(b=>b.addEventListener("click",()=>{const k="lk"+b.dataset.k;st[k]=!st[k];if(!st[k])$("N").value=st.N="";if(st[k])$("N").value=st.N="";fill();run();if(st[k])$("k"+b.dataset.k).focus()}));
+$("mseg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;st.mode=b.dataset.m;if(st.mode==="HL")st.N="";else{const o=calc&&calc.pick;if(o){st.R=+o.R.toFixed(1);st.T=+o.T.toFixed(1);st.n2=o.n}}fill();run()});
+$("opt").addEventListener("click",pickRow);
+$("opt").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pickRow(e)}});
+$("copy").addEventListener("click",async()=>{const b=$("copy");try{await navigator.clipboard.writeText(calc?calc.text:"");b.textContent="Tersalin ✓"}catch(e){b.textContent="Gagal menyalin"}setTimeout(()=>b.textContent="Salin ringkasan",1800)});
+
+/* ---------- PDF ---------- */
+const HEX={"--mut":"#5d636b","--acc":"#d9480f","--ink":"#16191d","--conc":"#cfcbc2","--steel":"#3d5a73","--paper":"#ffffff"};
+const toHex=t=>t.replace(/color-mix\(in srgb,\s*var\(--steel\) 30%,\s*var\(--paper\)\)/g,"#c5ced5").replace(/var\((--[a-z]+)\)/g,(m,k)=>HEX[k]||"#000");
+const svgImage=(el,k)=>new Promise((res,rej)=>{const w=el.clientWidth,h=el.clientHeight;
+  const src=`<svg xmlns="http://www.w3.org/2000/svg" width="${w*k}" height="${h*k}" viewBox="0 0 ${w} ${h}" font-family="Barlow, Arial, sans-serif">${toHex(el.innerHTML)}</svg>`;
+  const im=new Image();im.onload=()=>res({im,w,h});im.onerror=rej;im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(src)});
+function buildPdf(jpgs){ // jpgs: [{bytes,w,h}] -> Uint8Array, halaman A4
+  const enc=t=>{const a=new Uint8Array(t.length);for(let i=0;i<t.length;i++)a[i]=t.charCodeAt(i)&255;return a};
+  const parts=[],offs=[];let pos=0;const put=x=>{if(typeof x==="string")x=enc(x);parts.push(x);pos+=x.length};
+  const N=jpgs.length,total=3+3*N;put("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+  const obj=(n,...b)=>{offs[n]=pos;put(n+" 0 obj\n");b.forEach(put);put("\nendobj\n")};
+  obj(1,"<</Type/Catalog/Pages 2 0 R>>");
+  obj(2,"<</Type/Pages/Kids["+jpgs.map((_,i)=>(3+3*i)+" 0 R").join(" ")+"]/Count "+N+">>");
+  jpgs.forEach((j,i)=>{const p=3+3*i,cs="q 595.28 0 0 841.89 0 0 cm /Im0 Do Q";
+    obj(p,`<</Type/Page/Parent 2 0 R/MediaBox[0 0 595.28 841.89]/Resources<</XObject<</Im0 ${p+2} 0 R>>>>/Contents ${p+1} 0 R>>`);
+    obj(p+1,`<</Length ${cs.length}>>\nstream\n${cs}\nendstream`);
+    obj(p+2,`<</Type/XObject/Subtype/Image/Width ${j.w}/Height ${j.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${j.bytes.length}>>\nstream\n`,j.bytes,"\nendstream")});
+  const xref=pos;put("xref\n0 "+total+"\n0000000000 65535 f \n");for(let n=1;n<total;n++)put(String(offs[n]).padStart(10,"0")+" 00000 n \n");
+  put(`trailer\n<</Size ${total}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF`);
+  const out=new Uint8Array(pos);let o=0;for(const q of parts){out.set(q,o);o+=q.length}return out;
+}
+async function makePdf(){
+  const o=calc.pick,g=calc.g,PW=1654,PH=2339,M=120,CW=PW-2*M,pages=[];let c,x,y;
+  const F=(w,sz)=>`${w} ${sz}px Barlow, Arial, sans-serif`;
+  const newPage=()=>{c=document.createElement("canvas");c.width=PW;c.height=PH;x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,PW,PH);pages.push(c);y=M};
+  const need=h=>{if(y+h>PH-M-30)newPage()};
+  const txt=(t,sz,w,col,X0=M,al="left")=>{x.font=F(w,sz);x.fillStyle=col;x.textAlign=al;x.fillText(t,X0,y+sz)};
+  const wrap=(t,sz,w,mw)=>{x.font=F(w,sz);const out=[];let line="";for(const wd of t.split(" ")){const tst=line?line+" "+wd:wd;if(x.measureText(tst).width>mw&&line){out.push(line);line=wd}else line=tst}if(line)out.push(line);return out};
+  const para=(t,sz,w,col,ind=0)=>{for(const l of wrap(t,sz,w,CW-ind)){need(sz*1.4);txt(l,sz,w,col,M+ind);y+=sz*1.4}};
+  const h2=t=>{need(190);y+=24;txt(t,40,"700","#16191d");y+=60;x.fillStyle="#16191d";x.fillRect(M,y,CW,3);y+=16};
+  const img=async(el,cap)=>{const {im,w,h}=await svgImage(el,3);let dw=CW,dh=CW*h/w;const mh=640;if(dh>mh){dh=mh;dw=mh*w/h}
+    need(dh+60);txt(cap,26,"600","#5d636b");y+=44;x.drawImage(im,M+(CW-dw)/2,y,dw,dh);y+=dh+20};
+  newPage();
+  const date=new Date().toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
+  txt("Hitung Tangga",72,"700","#16191d");y+=92;
+  txt(`Tangga ${st.type} ${SHN[st.shape]} · ${date}`,30,"500","#5d636b");y+=56;
+  x.fillStyle="#d9480f";x.fillRect(M,y,CW,6);y+=36;
+  const tiles=[["Optrede (tinggi)",f1(o.R)+" cm"],["Antrede (injakan)",f1(o.T)+" cm"],["Jumlah optrede",o.n+" · "+o.tr+" injakan"],["Kemiringan",f1(o.ang,0)+"°"]];
+  const tw=CW/4;tiles.forEach((t,i)=>{const X0=M+i*tw;x.fillStyle="#16191d";x.fillRect(X0,y,tw-24,4);
+    x.font=F("500",24);x.fillStyle="#5d636b";x.textAlign="left";x.fillText(t[0],X0,y+40);x.font=F("700",i===2?40:54);x.fillStyle="#16191d";x.fillText(t[1],X0,y+104)});
+  y+=136;
+  para(isS()?`Tinggi total ${f1(st.H)} cm · diameter ${f1(st.D)} cm · tiang ${POLE[st.pole][0]} · putaran ${f1(o.rot,0)}° (${f1(o.alpha,1)}° per anak tangga) · injakan diukur di garis jalan r = ${f1(sp().rw,0)} cm`:`Tinggi total ${f1(st.H)} cm · lebar tangga ${f1(st.W)} cm · ukuran denah ${g.fp.txt}`+(isS()?"":st.shape!=="I"?` · lengan 1 = ${g.t1} injakan, lengan 2 = ${g.t2} injakan`:st.Bon?` · bordes ${f1(st.B)} cm`:"")+` · 2R+T = ${f1(o.blon)} cm`+(st.type==="besi"?` · ibu tangga ${PROF[st.prof][0]}, ${PLAT[st.plat][0]}`:` · tebal pelat ${f1(st.t)} cm`),28,"500","#16191d");
+  y+=10;
+  await img($("svg"),$("capS").textContent);
+  await img($("plan"),"Denah (tampak atas)");
+  h2("Hasil pengecekan");
+  for(const li of $("msgs").children){const t=li.textContent,cv=li.style.getPropertyValue("--c"),col=cv.includes("ok")?"#2b7a3d":cv.includes("bad")?"#c0262d":"#b35c00";
+    need(44);x.fillStyle=col;x.beginPath();x.arc(M+10,y+19,9,0,7);x.fill();para(t,27,"500","#16191d",34)}
+  const table=(head,rows,cols)=>{const row=(r,bold,bg)=>{need(50);if(bg){x.fillStyle="#f3f1ec";x.fillRect(M,y,CW,50)}
+      r.forEach((t,i)=>{const [cx,al]=cols[i];x.font=F(bold?"700":"500",26);x.fillStyle=bold?"#5d636b":"#16191d";x.textAlign=al;x.fillText(t,cx,y+34)});
+      x.fillStyle="#d9d6cf";x.fillRect(M,y+49,CW,1);y+=50};
+    row(head,true,false);rows.forEach((r,i)=>row(r,false,i%2===1))};
+  h2("Tabel marking di lapangan");
+  table(["Titik","Tinggi",isS()?"Sudut":"Jarak datar"],[["Awal (muka optrede 1)","0","0"],...g.marks.map(m=>[m[0],f1(m[1])+" cm",isS()?f1(m[2]/o.T*o.alpha,1)+"°":f1(m[2])+" cm"])],[[M+10,"left"],[M+CW*.72,"right"],[M+CW-10,"right"]]);
+  y+=8;para($("markNote").textContent,24,"400","#5d636b");
+  if(calc.rb){h2("Pembesian tangga beton");
+    table(["Elemen","Besi","Jml","Potong","Total"],calc.rb.rows.map(r=>[r[0],r[1],String(r[2]),f1(r[3],0)+" cm",f1(r[4],1)+" m"]),[[M+10,"left"],[M+CW*.62,"right"],[M+CW*.72,"right"],[M+CW*.86,"right"],[M+CW-10,"right"]]);
+    y+=16;table(["Diameter","Panjang +5%","Batang 12 m","Berat"],[...calc.rb.sum.map(r=>[r[0],f1(r[1],1)+" m",String(r[2]),f1(r[3],0)+" kg"]),["Total","","",f1(calc.rb.kg,0)+" kg"]],[[M+10,"left"],[M+CW*.5,"right"],[M+CW*.75,"right"],[M+CW-10,"right"]]);
+    y+=8;para(calc.rb.note,24,"400","#5d636b")}
+  if(calc.rl){h2("Railing / pegangan");table(["Item","Jumlah"],calc.rl.rows,[[M+10,"left"],[M+CW-10,"right"]]);y+=8;para(calc.rl.note,24,"400","#5d636b")}
+  const mt=materials(o,g);h2("Estimasi material tangga "+st.type);
+  table(["Item","Jumlah"],mt.rows,[[M+10,"left"],[M+CW-10,"right"]]);
+  y+=8;para(mt.note,24,"400","#5d636b");
+  pages.forEach((p,i)=>{const cx=p.getContext("2d");cx.font=F("400",22);cx.fillStyle="#5d636b";cx.textAlign="left";
+    cx.fillText("Hitung Tangga — hasil perhitungan awal; untuk pelaksanaan cek perencana struktur.",M,PH-70);cx.textAlign="right";cx.fillText(`Hal ${i+1}/${pages.length}`,PW-M,PH-70)});
+  const jpgs=[];for(const p of pages){const b=await new Promise(r=>p.toBlob(r,"image/jpeg",0.9));jpgs.push({bytes:new Uint8Array(await b.arrayBuffer()),w:PW,h:PH})}
+  return new Blob([buildPdf(jpgs)],{type:"application/pdf"});
+}
+let lastPdf=null;
+const shareFile=async f=>{await navigator.share({files:[f],title:f.name})};
+async function deliver(blob,name){
+  const msg=$("pdfMsg");let dl=null;
+  try{if(window.claude&&typeof window.claude.use==="function")dl=await window.claude.use("downloads")}catch(e){}
+  if(dl){try{await dl.save({filename:name,data:blob});msg.textContent="PDF disimpan."}catch(e){msg.textContent=e&&e.code==="declined"?"Penyimpanan dibatalkan.":"PDF tidak bisa disimpan di tampilan ini."}return}
+  const file=new File([blob],name,{type:"application/pdf"});lastPdf=file;
+  const touch=matchMedia("(pointer:coarse)").matches;
+  if(touch&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await shareFile(file);msg.textContent="PDF siap.";return}
+    catch(e){if(e&&e.name==="AbortError"){msg.textContent="Dibatalkan.";return}}
+    msg.innerHTML='PDF sudah dibuat. <button type="button" id="shareAgain">Bagikan / simpan PDF</button>';
+    $("shareAgain").onclick=()=>shareFile(lastPdf).catch(()=>{});return}
+  const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  msg.innerHTML=`PDF dibuat. Bila tidak terunduh otomatis, <a href="${url}" target="_blank" rel="noopener">buka PDF di sini</a>.`;
+}
+$("pdf").addEventListener("click",async()=>{if(!calc)return;const b=$("pdf");b.disabled=true;b.textContent="Membuat PDF…";$("pdfMsg").textContent="";
+  try{const blob=await makePdf();const d=new Date().toISOString().slice(0,10);await deliver(blob,`tangga-${st.type}-${st.shape==="I"?"lurus":st.shape}-${d}.pdf`)}
+  catch(e){$("pdfMsg").textContent="Gagal membuat PDF: "+(e&&e.message||e)}
+  b.disabled=false;b.textContent="Simpan PDF"});
+if(window.claude)$("print").classList.add("hide");
+$("print").addEventListener("click",()=>{try{window.print()}catch(e){}});
+$("reset").addEventListener("click",()=>{st={...DEF};fill();run()});
+/* ---------- kode aktivasi ---------- */
+// GANTI dua nilai ini bila ingin kode baru. Mengganti RAHASIA membuat semua kode lama tidak berlaku.
+const KODE_PEMILIK="TGA-5MK6-AVNU";
+const RAHASIA="LJRGRWQNDY2W3UNHATGC";
+const AB="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const cyrb=(str,seed)=>{let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0;i<str.length;i++){const ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}
+  h1=Math.imul(h1^(h1>>>16),2246822507);h1^=Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507);h2^=Math.imul(h1^(h1>>>13),3266489909);return 4294967296*(2097151&h2)+(h1>>>0)};
+const sig=id=>{let v=cyrb(RAHASIA+"|"+id,7),o="";for(let i=0;i<5;i++){o+=AB[v%32];v=Math.floor(v/32)}return o};
+const norm=c=>String(c||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+function roleOf(code){const c=norm(code);if(!c)return null;if(c===norm(KODE_PEMILIK))return"owner";
+  if(c.length===9){const id=c.slice(0,4),sg=c.slice(4);if([...c].every(ch=>AB.includes(ch))&&sig(id)===sg)return"user"}return null}
+const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}};
+function newCode(){const a=new Uint32Array(4);try{crypto.getRandomValues(a)}catch(e){for(let i=0;i<4;i++)a[i]=Math.random()*4294967296}
+  const id=[...a].map(v=>AB[v%32]).join("");return id+"-"+sig(id)}
+function codeList(){try{return JSON.parse(LS("ht_kodeList")||"[]")}catch(e){return[]}}
+function renderCodes(){const l=codeList();$("cList").innerHTML=l.length?l.map((c,i)=>`<tr><td>${esc(c.name||"—")}<br><span class="note">${esc(c.date)}</span></td><td><code>${esc(c.code)}</code></td><td><button type="button" data-i="${i}">Salin</button></td></tr>`).join(""):`<tr><td class="note">Belum ada kode dibuat di HP ini.</td></tr>`}
+function setRole(role){const lock=$("lock"),app=document.querySelector("main");
+  if(role){lock.classList.add("off");app.inert=false;$("ownerBox").classList.toggle("hide",role!=="owner");if(role==="owner")renderCodes();requestAnimationFrame(()=>run())}
+  else{lock.classList.remove("off");app.inert=true;$("ownerBox").classList.add("hide");setTimeout(()=>$("code").focus(),50)}}
+$("lockF").addEventListener("submit",()=>{const c=$("code").value,r=roleOf(c);
+  if(r){LS("ht_kode",norm(c));$("lockMsg").textContent="";$("code").value="";setRole(r)}else $("lockMsg").textContent="Kode tidak cocok. Periksa lagi huruf dan angkanya."});
+$("cGen").addEventListener("click",()=>{const l=codeList(),code=newCode();l.unshift({code,name:$("cName").value.trim(),date:new Date().toLocaleDateString("id-ID")});LS("ht_kodeList",JSON.stringify(l.slice(0,200)));$("cName").value="";renderCodes()});
+$("cList").addEventListener("click",async e=>{const b=e.target.closest("button[data-i]");if(!b)return;const c=codeList()[+b.dataset.i];try{await navigator.clipboard.writeText(c.code);b.textContent="Tersalin"}catch(err){b.textContent="Gagal"}setTimeout(()=>b.textContent="Salin",1500)});
+$("lockNow").addEventListener("click",()=>{LS("ht_kode",null);setRole(null)});
+const ro=new ResizeObserver(()=>{draw();drawPlan()});ro.observe($("svg"));ro.observe($("plan"));
+fill();run();
+setRole(roleOf(LS("ht_kode")));
+}
+</script>
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+</script>
+</body>
+</html>

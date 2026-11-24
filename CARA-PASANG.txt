@@ -1,0 +1,13 @@
+HITUNG TANGGA — CARA PASANG DI IPHONE (PWA via GitHub Pages)
+
+1. Buat repository baru di GitHub, misalnya: hitung-tangga (Public).
+2. Upload SEMUA isi folder ini (index.html, manifest.webmanifest, sw.js, folder icons)
+   ke root repository. Jangan masukkan ke subfolder.
+3. Settings > Pages > Source: "Deploy from a branch" > Branch: main, folder / (root) > Save.
+4. Tunggu 1-2 menit, alamatnya: https://USERNAME.github.io/hitung-tangga/
+5. Di iPhone buka alamat itu dengan SAFARI > tombol Bagikan > "Tambahkan ke Layar Utama".
+6. Buka sekali saat online; setelah itu aplikasi bisa dipakai offline.
+
+UPDATE APLIKASI
+- Ganti index.html, lalu ubah CACHE = "hitung-tangga-v1" di sw.js menjadi v2, v3, dst.
+- Di iPhone, tutup aplikasinya lalu buka lagi (kadang perlu 2x buka).
